@@ -1,65 +1,273 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search, MapPin, ChevronRight } from 'lucide-react';
+import { ALL_REGIONS, getRegionSuggestions } from '@/lib/data/koreaData';
+
+const FEATURED = [
+  { name: '서울', emoji: '🏙️', desc: '고궁·한강·야경의 수도' },
+  { name: '부산', emoji: '🌊', desc: '해운대·광안리·감천문화마을' },
+  { name: '제주', emoji: '🌋', desc: '한라산·올레길·화산섬 자연' },
+  { name: '경주', emoji: '🏛️', desc: '불국사·석굴암·야경 천년 고도' },
+  { name: '전주', emoji: '🏯', desc: '한옥마을·비빔밥·한지 전통 도시' },
+  { name: '강릉', emoji: '☕', desc: '경포대·오죽헌·커피 거리' },
+  { name: '여수', emoji: '🎇', desc: '밤바다·엑스포·돌산도 야경' },
+  { name: '통영', emoji: '🏝️', desc: '케이블카·동피랑·한산도' },
+  { name: '안동', emoji: '🎭', desc: '하회마을·탈춤·퇴계 서원' },
+  { name: '속초', emoji: '🏔️', desc: '설악산·청초호·아바이마을' },
+  { name: '순천', emoji: '🌿', desc: '순천만습지·낙안읍성·정원박람회' },
+  { name: '거제', emoji: '⛵', desc: '외도·포로수용소·케이블카' },
+];
+
+const PROVINCE_TABS = [
+  {
+    province: '수도권', regions: [
+      '서울', '인천', '수원', '용인', '성남', '고양', '부천', '안산',
+      '가평', '파주', '양평', '이천', '남양주', '화성', '포천', '여주',
+    ],
+  },
+  {
+    province: '강원', regions: [
+      '강릉', '속초', '춘천', '원주', '평창', '정선', '태백', '삼척',
+      '동해', '영월', '양양', '홍천', '인제', '고성(강원)', '화천', '철원', '횡성', '양구', '태백',
+    ],
+  },
+  {
+    province: '충청', regions: [
+      '공주', '부여', '태안', '보령', '서산', '천안', '아산', '논산',
+      '단양', '청주', '충주', '제천', '괴산', '보은', '영동', '금산', '당진',
+    ],
+  },
+  {
+    province: '경상', regions: [
+      '경주', '안동', '문경', '포항', '영주', '영덕', '봉화', '청송', '울릉', '울진',
+      '통영', '거제', '남해', '진주', '밀양', '하동', '사천', '합천', '거창', '산청', '함양', '창원',
+    ],
+  },
+  {
+    province: '전라', regions: [
+      '전주', '여수', '담양', '목포', '순천', '남원', '고창', '군산', '무주', '부안',
+      '강진', '해남', '완도', '신안', '진도', '보성', '구례', '화순', '고흥', '정읍',
+    ],
+  },
+  {
+    province: '제주', regions: ['제주', '서귀포', '제주시'],
+  },
+];
+
+export default function HomePage() {
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<ReturnType<typeof getRegionSuggestions>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handleInput = (value: string) => {
+    setQuery(value);
+    if (value.trim()) {
+      setSuggestions(getRegionSuggestions(value));
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const navigate = (region: string) => {
+    if (!region.trim()) return;
+    router.push(`/places?region=${encodeURIComponent(region.trim())}`);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(query);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="flex flex-col min-h-screen">
+      {/* Hero */}
+      <div
+        className="relative flex flex-col items-center justify-center px-4 py-24 sm:py-36 text-center"
+        style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 55%, #7c3aed 100%)' }}
+      >
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 20% 30%, #ffffff 0%, transparent 50%), radial-gradient(circle at 80% 70%, #bae6fd 0%, transparent 50%)',
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+
+        <div className="relative z-10 max-w-2xl w-full">
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <MapPin className="text-yellow-300" size={28} />
+            <span className="text-yellow-300 font-semibold text-lg tracking-wide">한국 여행 플래너</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
+            <span className="text-white">어디로</span>
+            <br />
+            <span style={{ background: 'linear-gradient(135deg, #fde68a, #ffffff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              떠나고 싶으신가요?
+            </span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="text-white/80 text-lg mb-4">
+            전국 <span className="text-yellow-300 font-semibold">{ALL_REGIONS.length}개 지역</span> 여행지를 추천해드려요
           </p>
+
+          <form onSubmit={handleSubmit} className="relative w-full mb-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60" size={20} />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => handleInput(e.target.value)}
+                onFocus={() => { setSuggestions(getRegionSuggestions(query)); setShowSuggestions(true); }}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                placeholder="지역명 또는 키워드 입력 (예: 강릉, 단양, 서핑...)"
+                className="w-full pl-12 pr-14 py-4 rounded-2xl text-base font-medium
+                  bg-white/20 backdrop-blur-sm border border-white/30
+                  text-white placeholder-white/50
+                  focus:outline-none focus:border-white/70 focus:bg-white/25"
+              />
+              <button
+                type="submit"
+                disabled={!query.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2
+                  bg-amber-400 hover:bg-amber-300 disabled:bg-white/20
+                  text-white rounded-xl p-2.5 transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden
+                bg-white border border-slate-200 shadow-2xl z-50 max-h-72 overflow-y-auto">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.name}
+                    type="button"
+                    onMouseDown={() => navigate(s.name)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-blue-50 transition-colors"
+                  >
+                    <MapPin size={16} className="text-blue-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-slate-800 font-medium">{s.name}</span>
+                      <span className="text-slate-400 text-xs ml-2">{s.province}</span>
+                    </div>
+                    {s.tags && (
+                      <div className="flex gap-1 shrink-0">
+                        {s.tags.slice(0, 2).map((t) => (
+                          <span key={t} className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded-full">{t}</span>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      {/* 도별 탭 지역 브라우저 */}
+      <section className="max-w-5xl mx-auto w-full px-4 py-10">
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">지역별 찾아보기</h2>
+        <p className="text-slate-500 mb-6">도·권역 탭을 선택해 원하는 지역을 찾아보세요</p>
+
+        {/* 탭 */}
+        <div className="flex gap-2 flex-wrap mb-5">
+          {PROVINCE_TABS.map((tab, i) => (
+            <button
+              key={tab.province}
+              onClick={() => setActiveTab(i)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                activeTab === i
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 shadow-sm'
+              }`}
+            >
+              {tab.province}
+            </button>
+          ))}
         </div>
-      </main>
-    </div>
+
+        {/* 지역 버튼 그리드 */}
+        <div className="flex flex-wrap gap-2">
+          {PROVINCE_TABS[activeTab].regions.map((r) => {
+            const info = ALL_REGIONS.find((a) => a.name === r);
+            return (
+              <button
+                key={r}
+                onClick={() => navigate(r)}
+                className="group flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium
+                  bg-white hover:bg-blue-600 border border-slate-200 hover:border-blue-500
+                  text-slate-700 hover:text-white transition-all shadow-sm"
+              >
+                <span>{r.replace('(강원)', '').replace('(경남)', '')}</span>
+                {info?.tags?.[0] && (
+                  <span className="text-slate-400 group-hover:text-blue-100 text-xs">· {info.tags[0]}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 인기 여행지 */}
+      <section className="max-w-5xl mx-auto w-full px-4 pb-16">
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">인기 여행지</h2>
+        <p className="text-slate-500 mb-8">지금 가장 많이 찾는 한국 여행지를 둘러보세요</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {FEATURED.map((f) => (
+            <button
+              key={f.name}
+              onClick={() => navigate(f.name)}
+              className="group flex items-center gap-4 p-5 rounded-2xl
+                bg-white hover:bg-blue-50 border border-slate-200
+                hover:border-blue-300 shadow-sm hover:shadow-md text-left transition-all"
+            >
+              <span className="text-4xl">{f.emoji}</span>
+              <div className="min-w-0">
+                <div className="font-bold text-slate-900 text-lg">{f.name}</div>
+                <div className="text-slate-500 text-sm leading-snug">{f.desc}</div>
+              </div>
+              <ChevronRight className="ml-auto shrink-0 text-slate-400 group-hover:text-blue-500" size={20} />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* 이용 안내 */}
+      <section className="py-16 px-4 bg-white border-t border-slate-100">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-10">이렇게 사용하세요</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {[
+              { step: '01', title: '지역 선택', desc: '전국 어디든 지역명으로 검색하세요' },
+              { step: '02', title: '장소 선택', desc: '이미지를 보면서 가고 싶은 곳을 골라보세요' },
+              { step: '03', title: '일정 확인', desc: '이동 경로·교통·지원금 정보가 담긴 리포트를 받으세요' },
+            ].map((item) => (
+              <div key={item.step} className="flex flex-col items-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center mb-4 font-black text-lg text-white shadow-md"
+                  style={{ background: 'linear-gradient(135deg, #0ea5e9, #2563eb)' }}
+                >
+                  {item.step}
+                </div>
+                <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="text-center py-6 text-slate-400 text-sm border-t border-slate-200 bg-white">
+        © 2026 한국 여행 플래너 · 전국 {ALL_REGIONS.length}개 지역 지원
+      </footer>
+    </main>
   );
 }
