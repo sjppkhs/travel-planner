@@ -15,6 +15,13 @@ import { ALL_REGIONS } from '@/lib/data/koreaData';
 
 const SUPPORTED_REGIONS = new Set(ALL_REGIONS.map((r) => r.name));
 
+// province(광역시) 우선, 없으면 regionName(시군구) 순으로 지원 지역 결정
+function getEffectiveRegion(ev: BrowseEvent): string | null {
+  if (SUPPORTED_REGIONS.has(ev.province)) return ev.province;
+  if (SUPPORTED_REGIONS.has(ev.regionName)) return ev.regionName;
+  return null;
+}
+
 interface BrowseEvent {
   id: string;
   title: string;
@@ -68,15 +75,14 @@ function formatDate(s: string): string {
 
 function EventCard({
   event,
+  effectiveRegion,
   onPlan,
-  isSupported,
 }: {
   event: BrowseEvent;
+  effectiveRegion: string | null;
   onPlan: () => void;
-  isSupported: boolean;
 }) {
   const [imgErr, setImgErr] = useState(false);
-  const region = event.regionName || event.province;
 
   return (
     <div className="flex flex-col rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200">
@@ -134,20 +140,20 @@ function EventCard({
         <div className="mt-auto pt-2">
           <button
             onClick={onPlan}
-            disabled={!isSupported}
-            title={!isSupported ? '아직 지원하지 않는 지역이에요' : undefined}
+            disabled={!effectiveRegion}
+            title={!effectiveRegion ? '아직 지원하지 않는 지역이에요' : undefined}
             className={`w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
               text-xs font-semibold transition-colors shadow-sm
-              ${isSupported
+              ${effectiveRegion
                 ? 'bg-blue-600 hover:bg-blue-500 text-white'
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
               }`}
           >
             <MapPin size={13} />
-            {isSupported
-              ? `${region} 여행 계획하기`
-              : `${region || '지역 미상'} (미지원 지역)`}
-            {isSupported && <ChevronRight size={14} />}
+            {effectiveRegion
+              ? `${effectiveRegion} 여행 계획하기`
+              : `${event.regionName || event.province || '지역 미상'} (미지원)`}
+            {effectiveRegion && <ChevronRight size={14} />}
           </button>
         </div>
       </div>
@@ -187,11 +193,9 @@ export default function EventsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handlePlan = (ev: BrowseEvent) => {
-    const region = ev.regionName || ev.province;
-    if (!region) return;
+  const handlePlan = (ev: BrowseEvent, effectiveRegion: string) => {
     const p = new URLSearchParams({
-      region,
+      region: effectiveRegion,
       eventTitle: ev.title,
       eventDate: `${formatDate(ev.startDate)} ~ ${formatDate(ev.endDate)}`,
     });
@@ -276,15 +280,13 @@ export default function EventsPage() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {events.map((ev) => {
-                const supported =
-                  SUPPORTED_REGIONS.has(ev.regionName) ||
-                  SUPPORTED_REGIONS.has(ev.province);
+                const effectiveRegion = getEffectiveRegion(ev);
                 return (
                   <EventCard
                     key={ev.id}
                     event={ev}
-                    onPlan={() => handlePlan(ev)}
-                    isSupported={supported}
+                    effectiveRegion={effectiveRegion}
+                    onPlan={() => effectiveRegion && handlePlan(ev, effectiveRegion)}
                   />
                 );
               })}
