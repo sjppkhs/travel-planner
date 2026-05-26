@@ -42,11 +42,13 @@ function PlaceCard({
   selected,
   order,
   onToggle,
+  isEventVenue = false,
 }: {
   spot: TravelSpot;
   selected: boolean;
   order: number;
   onToggle: () => void;
+  isEventVenue?: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
 
@@ -55,7 +57,9 @@ function PlaceCard({
       onClick={onToggle}
       className={`relative flex flex-col rounded-2xl overflow-hidden border text-left
         transition-all duration-200
-        ${selected
+        ${isEventVenue && !selected
+          ? 'border-violet-400 ring-2 ring-violet-400/20 shadow-md'
+          : selected
           ? 'border-blue-500 ring-2 ring-blue-500/30 scale-[1.01] shadow-lg'
           : 'border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md'
         }
@@ -63,7 +67,7 @@ function PlaceCard({
     >
       {/* Image */}
       <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
-        {!imgError ? (
+        {spot.imageUrl && !imgError ? (
           <Image
             src={spot.imageUrl}
             alt={spot.name}
@@ -73,21 +77,29 @@ function PlaceCard({
             unoptimized
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
-            <MapPin size={40} className="text-slate-300" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-50 to-blue-100">
+            <Sparkles size={40} className="text-violet-300" />
           </div>
         )}
 
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-        {/* Category badge */}
-        <span
-          className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold border
-            ${CATEGORY_COLOR[spot.category]}`}
-        >
-          {CATEGORY_LABEL[spot.category]}
-        </span>
+        {/* 행사장 배지 or Category badge */}
+        {isEventVenue ? (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold border
+            bg-violet-500 text-white border-violet-400 flex items-center gap-1">
+            <Sparkles size={11} />
+            행사장
+          </span>
+        ) : (
+          <span
+            className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold border
+              ${CATEGORY_COLOR[spot.category]}`}
+          >
+            {CATEGORY_LABEL[spot.category]}
+          </span>
+        )}
 
         {/* Selection indicator */}
         <div
@@ -157,30 +169,58 @@ function PlacesContent() {
   const region = params.get('region') ?? '';
   const eventTitle = params.get('eventTitle') ?? '';
   const eventDate = params.get('eventDate') ?? '';
+  const eventAddr = params.get('eventAddr') ?? '';
+  const eventImage = params.get('eventImage') ?? '';
+  const eventLat = parseFloat(params.get('eventLat') ?? '0') || 0;
+  const eventLng = parseFloat(params.get('eventLng') ?? '0') || 0;
 
   const [spots, setSpots] = useState<TravelSpot[]>([]);
   const [dataSource, setDataSource] = useState<string>('local');
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(
+    eventTitle ? ['event-venue'] : [],
+  );
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   useEffect(() => {
     if (!region) return;
     setLoading(true);
+
+    const venueSpot: TravelSpot | null = eventTitle
+      ? {
+          id: 'event-venue',
+          name: eventTitle,
+          region,
+          category: 'culture',
+          description: `${eventDate} 기간 동안 열리는 행사·축제 장소입니다.`,
+          imageUrl: eventImage,
+          address: eventAddr,
+          coordinates: { lat: eventLat, lng: eventLng },
+          tags: ['행사', '축제'],
+          estimatedVisitTime: 120,
+          tips: eventDate ? [`행사 기간: ${eventDate}`] : [],
+          nearbyTransit: [],
+          rating: 4.5,
+        }
+      : null;
+
+    const inject = (base: TravelSpot[]) =>
+      venueSpot ? [venueSpot, ...base] : base;
+
     fetch(`/api/spots?region=${encodeURIComponent(region)}`)
       .then((r) => r.json())
       .then((data) => {
-        setSpots(data.spots ?? []);
+        setSpots(inject(data.spots ?? []));
         setDataSource(data.source ?? 'local');
       })
       .catch(() => {
         import('@/lib/data/koreaData').then(({ searchSpots }) => {
-          setSpots(searchSpots(region));
+          setSpots(inject(searchSpots(region)));
           setDataSource('local-fallback');
         });
       })
       .finally(() => setLoading(false));
-  }, [region]);
+  }, [region, eventTitle, eventDate, eventAddr, eventImage, eventLat, eventLng]);
 
   const categories = ['all', ...Array.from(new Set(spots.map((s) => s.category)))];
   const filtered =
@@ -325,6 +365,7 @@ function PlacesContent() {
               selected={selected.includes(spot.id)}
               order={orderOf(spot.id)}
               onToggle={() => toggle(spot.id)}
+              isEventVenue={spot.id === 'event-venue'}
             />
           ))}
         </div>

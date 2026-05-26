@@ -14,6 +14,8 @@ interface FestivalItem {
   eventenddate: string;
   progresstype: string; // 01=진행중, 02=예정, 03=종료
   areacode: string;
+  mapx: string; // 경도 (longitude)
+  mapy: string; // 위도 (latitude)
 }
 
 export interface BrowseEvent {
@@ -26,6 +28,8 @@ export interface BrowseEvent {
   status: 'ongoing' | 'upcoming';
   province: string;
   regionName: string;
+  lat: number;
+  lng: number;
 }
 
 function todayKST(): string {
@@ -128,6 +132,8 @@ export async function GET(req: NextRequest) {
         status: it.progresstype === '01' ? 'ongoing' : 'upcoming',
         province: extractProvince(it.addr1 ?? ''),
         regionName: extractCity(it.addr1 ?? ''),
+        lat: parseFloat(it.mapy ?? '0') || 0,
+        lng: parseFloat(it.mapx ?? '0') || 0,
       }));
 
     const result = province

@@ -32,6 +32,8 @@ interface BrowseEvent {
   status: 'ongoing' | 'upcoming';
   province: string;
   regionName: string;
+  lat: number;
+  lng: number;
 }
 
 const PROVINCES = [
@@ -198,6 +200,10 @@ export default function EventsPage() {
       region: effectiveRegion,
       eventTitle: ev.title,
       eventDate: `${formatDate(ev.startDate)} ~ ${formatDate(ev.endDate)}`,
+      eventAddr: ev.addr1,
+      eventImage: ev.imageUrl,
+      eventLat: String(ev.lat),
+      eventLng: String(ev.lng),
     });
     router.push(`/places?${p.toString()}`);
   };
