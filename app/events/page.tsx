@@ -11,6 +11,9 @@ import {
   MapPin,
   Sparkles,
 } from 'lucide-react';
+import { ALL_REGIONS } from '@/lib/data/koreaData';
+
+const SUPPORTED_REGIONS = new Set(ALL_REGIONS.map((r) => r.name));
 
 interface BrowseEvent {
   id: string;
@@ -63,7 +66,15 @@ function formatDate(s: string): string {
   return `${s.slice(0, 4)}.${s.slice(4, 6)}.${s.slice(6, 8)}`;
 }
 
-function EventCard({ event, onPlan }: { event: BrowseEvent; onPlan: () => void }) {
+function EventCard({
+  event,
+  onPlan,
+  isSupported,
+}: {
+  event: BrowseEvent;
+  onPlan: () => void;
+  isSupported: boolean;
+}) {
   const [imgErr, setImgErr] = useState(false);
   const region = event.regionName || event.province;
 
@@ -123,14 +134,20 @@ function EventCard({ event, onPlan }: { event: BrowseEvent; onPlan: () => void }
         <div className="mt-auto pt-2">
           <button
             onClick={onPlan}
-            disabled={!region}
-            className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
-              bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-semibold
-              transition-colors shadow-sm"
+            disabled={!isSupported}
+            title={!isSupported ? '아직 지원하지 않는 지역이에요' : undefined}
+            className={`w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
+              text-xs font-semibold transition-colors shadow-sm
+              ${isSupported
+                ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+              }`}
           >
             <MapPin size={13} />
-            {region ? `${region} 여행 계획하기` : '지역 정보 없음'}
-            <ChevronRight size={14} />
+            {isSupported
+              ? `${region} 여행 계획하기`
+              : `${region || '지역 미상'} (미지원 지역)`}
+            {isSupported && <ChevronRight size={14} />}
           </button>
         </div>
       </div>
@@ -258,9 +275,19 @@ export default function EventsPage() {
               {events.length}개 행사·축제 {province !== '전체' && `· ${province}`}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {events.map((ev) => (
-                <EventCard key={ev.id} event={ev} onPlan={() => handlePlan(ev)} />
-              ))}
+              {events.map((ev) => {
+                const supported =
+                  SUPPORTED_REGIONS.has(ev.regionName) ||
+                  SUPPORTED_REGIONS.has(ev.province);
+                return (
+                  <EventCard
+                    key={ev.id}
+                    event={ev}
+                    onPlan={() => handlePlan(ev)}
+                    isSupported={supported}
+                  />
+                );
+              })}
             </div>
           </>
         )}
