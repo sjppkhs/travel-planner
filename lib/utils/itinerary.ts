@@ -336,6 +336,12 @@ const REGION_TIPS: Record<string, string[]> = {
     '올레 6·7코스 서귀포 구간 걷기 추천 (4~5시간)',
     '외돌개~이중섭거리~서귀포매일올레시장 도보 투어 가능',
   ],
+  울릉: [
+    '여객선은 포항(약 3시간)·강릉(약 3시간)·동해(약 2시간 30분) 출발 — 기상 악화 시 결항 잦으므로 일정에 여유일 필수',
+    '섬 내 교통은 버스(하루 수회)·렌터카·택시 이용, 섬일주도로 드라이브 강력 추천',
+    '울릉도 특산 먹거리: 오징어내장탕·홍합밥·산나물비빔밥·호박엿·울릉약소 꼭 체험',
+    '독도 탐방선은 저동항에서 사전 예약 필수 — 기상에 따라 당일 취소 가능, 최소 2박 3일 일정 권장',
+  ],
 };
 
 const UNIVERSAL_APPS: RegionalApp[] = [
@@ -726,6 +732,27 @@ const REGIONAL_APPS: Record<string, RegionalApp[]> = {
       name: '서귀포관광',
       description: '서귀포시 공식 관광 포털 — 정방폭포·올레길·이중섭미술관 안내',
       website: 'https://www.visitjeju.net/ko/region/seogwipo',
+      platforms: ['web'],
+    },
+  ],
+  울릉: [
+    {
+      name: '울릉군 관광',
+      description: '울릉군 공식 관광 포털 — 여객선 운항 정보·독도 탐방·섬일주 안내',
+      website: 'https://www.ulleung.go.kr/tour',
+      platforms: ['web'],
+    },
+    {
+      name: '씨스포빌 (독도·울릉 여객선 예약)',
+      description: '포항·강릉·동해 출발 울릉도·독도행 여객선 실시간 예약',
+      website: 'https://www.seaferry.co.kr',
+      appSearch: '씨스포빌',
+      platforms: ['ios', 'android', 'web'],
+    },
+    {
+      name: '독도관리사무소',
+      description: '독도 입도 신청 및 탐방선 운항 현황 확인',
+      website: 'https://www.dokdo.go.kr',
       platforms: ['web'],
     },
   ],
