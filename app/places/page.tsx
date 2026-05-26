@@ -12,6 +12,7 @@ import {
   Globe,
   Loader2,
   MapPin,
+  Sparkles,
   Star,
   Tag,
   Ticket,
@@ -154,6 +155,8 @@ function PlacesContent() {
   const router = useRouter();
   const params = useSearchParams();
   const region = params.get('region') ?? '';
+  const eventTitle = params.get('eventTitle') ?? '';
+  const eventDate = params.get('eventDate') ?? '';
 
   const [spots, setSpots] = useState<TravelSpot[]>([]);
   const [dataSource, setDataSource] = useState<string>('local');
@@ -288,6 +291,19 @@ function PlacesContent() {
 
       {/* Grid */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+        {/* 행사 출발 배너 */}
+        {eventTitle && (
+          <div className="mb-4 p-4 rounded-xl bg-violet-50 border border-violet-200 flex items-start gap-3">
+            <Sparkles size={18} className="text-violet-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-violet-800 font-semibold text-sm line-clamp-2">{eventTitle}</p>
+              {eventDate && (
+                <p className="text-violet-500 text-xs mt-0.5">{eventDate} · 이 행사를 기준으로 여행 코스를 골라보세요</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {selected.length > 0 && (
           <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200
             text-blue-700 text-sm font-medium">

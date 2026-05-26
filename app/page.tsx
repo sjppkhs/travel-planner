@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, ChevronRight } from 'lucide-react';
+import { Search, MapPin, ChevronRight, Sparkles } from 'lucide-react';
 import { ALL_REGIONS, getRegionSuggestions } from '@/lib/data/koreaData';
 
 const FEATURED = [
@@ -171,6 +171,25 @@ export default function HomePage() {
           </form>
         </div>
       </div>
+
+      {/* 행사·축제로 여행하기 */}
+      <section className="max-w-5xl mx-auto w-full px-4 pt-8 pb-2">
+        <button
+          onClick={() => router.push('/events')}
+          className="w-full flex items-center gap-4 p-5 rounded-2xl text-left
+            shadow-md hover:shadow-lg transition-all duration-200"
+          style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)' }}
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+            <Sparkles size={26} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-white text-lg leading-tight">행사·축제로 여행 계획하기</div>
+            <div className="text-white/75 text-sm mt-0.5">전국 축제·행사를 먼저 찾고 여행 코스를 정해보세요</div>
+          </div>
+          <ChevronRight size={22} className="shrink-0 text-white/60" />
+        </button>
+      </section>
 
       {/* 도별 탭 지역 브라우저 */}
       <section className="max-w-5xl mx-auto w-full px-4 py-10">
