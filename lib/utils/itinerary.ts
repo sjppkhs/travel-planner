@@ -336,6 +336,12 @@ const REGION_TIPS: Record<string, string[]> = {
     '올레 6·7코스 서귀포 구간 걷기 추천 (4~5시간)',
     '외돌개~이중섭거리~서귀포매일올레시장 도보 투어 가능',
   ],
+  군위: [
+    '군위버스터미널이 교통 거점 — 대구 동부정류장에서 약 1시간, 서울 동서울터미널에서 약 3시간',
+    '삼존석굴·한밤마을·인각사는 차량 이동 권장 (관광지 간 거리 있음, 렌터카 또는 택시 추천)',
+    '화본역은 경북선 무궁화호로 직접 도착 가능 — 복고 기차 여행 코스로 추천',
+    '군위 사과·복숭아는 9~10월 직거래 장터에서 구입 추천, 군위 한우도 특산품',
+  ],
   울릉: [
     '여객선은 포항(약 3시간)·강릉(약 3시간)·동해(약 2시간 30분) 출발 — 기상 악화 시 결항 잦으므로 일정에 여유일 필수',
     '섬 내 교통은 버스(하루 수회)·렌터카·택시 이용, 섬일주도로 드라이브 강력 추천',
@@ -732,6 +738,20 @@ const REGIONAL_APPS: Record<string, RegionalApp[]> = {
       name: '서귀포관광',
       description: '서귀포시 공식 관광 포털 — 정방폭포·올레길·이중섭미술관 안내',
       website: 'https://www.visitjeju.net/ko/region/seogwipo',
+      platforms: ['web'],
+    },
+  ],
+  군위: [
+    {
+      name: '군위군 관광',
+      description: '군위군 공식 관광 포털 — 삼존석굴·인각사·화본역·한밤마을 안내',
+      website: 'https://www.gunwi.go.kr/tour',
+      platforms: ['web'],
+    },
+    {
+      name: '삼국유사테마파크',
+      description: '일연 스님의 삼국유사를 체험·전시로 만나는 테마파크 공식 사이트',
+      website: 'https://www.gunwi.go.kr/samgukyusa',
       platforms: ['web'],
     },
   ],

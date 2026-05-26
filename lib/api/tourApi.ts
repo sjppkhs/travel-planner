@@ -107,6 +107,7 @@ export const AREA_CODES: Record<string, { areaCode: string; sigunguCode?: string
   경주: { areaCode: '35', sigunguCode: '2' },
   고령: { areaCode: '35', sigunguCode: '3' },
   구미: { areaCode: '35', sigunguCode: '4' },
+  군위: { areaCode: '35', sigunguCode: '5' },
   김천: { areaCode: '35', sigunguCode: '6' },
   문경: { areaCode: '35', sigunguCode: '7' },
   봉화: { areaCode: '35', sigunguCode: '8' },
