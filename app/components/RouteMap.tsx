@@ -67,6 +67,9 @@ export default function RouteMap({ spots, region: _region }: Props) {
       const map = L.map(containerRef.current, { zoomControl: true }).setView(center, 12);
       mapRef.current = map;
 
+      // 동적 임포트 후 컨테이너 크기가 확정되지 않은 경우 타일이 어긋나는 문제 방지
+      setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 0);
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 18,
@@ -148,8 +151,8 @@ export default function RouteMap({ spots, region: _region }: Props) {
 
   return (
     <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-      {/* 지도 영역 */}
-      <div ref={containerRef} className="h-80 w-full" />
+      {/* 지도 영역 — 인라인 height 필수: Leaflet이 CSS 클래스보다 먼저 크기를 읽으면 0으로 계산됨 */}
+      <div ref={containerRef} className="w-full" style={{ height: '320px' }} />
 
       {/* 하단 컨트롤 */}
       <div className="bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
