@@ -1043,8 +1043,10 @@ export default function ItineraryPage() {
           </div>
         </section>
 
-        {/* Travel Benefits — 한국어 모드에서만 표시 */}
-        {lang === 'ko' && <TravelBenefitsSection region={report.region} />}
+        {/* Travel Benefits — 한국어 모드 + 반값지원 가능 지역만 표시 */}
+        {lang === 'ko' && HALF_PRICE_ELIGIBLE.has(report.region) && (
+          <TravelBenefitsSection region={report.region} />
+        )}
 
         {/* Region Tips */}
         <section className="mb-8">
