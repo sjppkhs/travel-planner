@@ -18,15 +18,9 @@ import {
   Ticket,
 } from 'lucide-react';
 import type { TravelSpot } from '@/lib/types';
+import { useLang } from '@/lib/context/LangContext';
 
-const CATEGORY_LABEL: Record<string, string> = {
-  attraction: '관광지',
-  food: '먹거리',
-  nature: '자연',
-  culture: '문화',
-  shopping: '쇼핑',
-  activity: '액티비티',
-};
+const CATEGORY_KEYS = ['attraction', 'food', 'nature', 'culture', 'shopping', 'activity'] as const;
 
 const CATEGORY_COLOR: Record<string, string> = {
   attraction: 'bg-orange-100 text-orange-700 border-orange-300',
@@ -51,6 +45,12 @@ function PlaceCard({
   isEventVenue?: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
+  const { t } = useLang();
+
+  const catLabel: Record<string, string> = {
+    attraction: t.catAttraction, food: t.catFood, nature: t.catNature,
+    culture: t.catCulture, shopping: t.catShopping, activity: t.catActivity,
+  };
 
   return (
     <button
@@ -90,14 +90,14 @@ function PlaceCard({
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold border
             bg-violet-500 text-white border-violet-400 flex items-center gap-1">
             <Sparkles size={11} />
-            행사장
+            {t.eventVenueLabel}
           </span>
         ) : (
           <span
             className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold border
               ${CATEGORY_COLOR[spot.category]}`}
           >
-            {CATEGORY_LABEL[spot.category]}
+            {catLabel[spot.category]}
           </span>
         )}
 
@@ -128,7 +128,7 @@ function PlaceCard({
         <div className="flex flex-wrap gap-2 mt-1">
           <div className="flex items-center gap-1 text-slate-500 text-xs">
             <Clock size={12} />
-            <span>약 {spot.estimatedVisitTime}분</span>
+            <span>{t.estVisitTime(spot.estimatedVisitTime)}</span>
           </div>
           {spot.admissionFee && (
             <div className="flex items-center gap-1 text-slate-500 text-xs">
@@ -166,6 +166,7 @@ const SOURCE_BADGE: Record<string, { label: string; color: string }> = {
 function PlacesContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLang();
   const region = params.get('region') ?? '';
   const eventTitle = params.get('eventTitle') ?? '';
   const eventDate = params.get('eventDate') ?? '';
@@ -222,7 +223,7 @@ function PlacesContent() {
       .finally(() => setLoading(false));
   }, [region, eventTitle, eventDate, eventAddr, eventImage, eventLat, eventLng]);
 
-  const categories = ['all', ...Array.from(new Set(spots.map((s) => s.category)))];
+  const categories = ['all', ...Array.from(new Set(spots.map((s) => s.category))).filter(c => CATEGORY_KEYS.includes(c as typeof CATEGORY_KEYS[number]))];
   const filtered =
     activeCategory === 'all' ? spots : spots.filter((s) => s.category === activeCategory);
 
@@ -245,8 +246,8 @@ function PlacesContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <Loader2 size={40} className="text-blue-500 animate-spin" />
-        <p className="text-slate-700 font-medium">{region} 여행지 정보를 불러오는 중...</p>
-        <p className="text-slate-400 text-sm">TourAPI + Google Places 조회 중</p>
+        <p className="text-slate-700 font-medium">{t.loadingSpots(region)}</p>
+        <p className="text-slate-400 text-sm">{t.loadingApiDesc}</p>
       </div>
     );
   }
@@ -255,15 +256,13 @@ function PlacesContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4">
         <MapPin size={48} className="text-slate-300" />
-        <p className="text-slate-700 text-lg font-medium">
-          &apos;{region}&apos; 지역의 여행지 정보를 찾을 수 없어요
-        </p>
+        <p className="text-slate-700 text-lg font-medium">{t.noSpots(region)}</p>
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow-sm"
         >
           <ArrowLeft size={18} />
-          돌아가기
+          {t.goBack}
         </button>
       </div>
     );
@@ -282,11 +281,11 @@ function PlacesContent() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-slate-900 text-lg leading-tight">
-              {region} 여행지 선택
+              {t.selectingPlaces(region)}
             </h1>
             <div className="flex items-center gap-2">
               <p className="text-slate-500 text-sm">
-                {spots.length}개 · {selected.length}개 선택됨
+                {t.nSpots(spots.length)} · {t.nSelected(selected.length)}
               </p>
               {dataSource && SOURCE_BADGE[dataSource] && (
                 <span className={`text-xs font-medium flex items-center gap-1 ${SOURCE_BADGE[dataSource].color}`}>
@@ -306,7 +305,7 @@ function PlacesContent() {
               bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600
               text-white shrink-0 shadow-sm"
           >
-            일정 생성
+            {t.generateItinerary}
             <ChevronRight size={16} />
           </button>
         </div>
@@ -323,7 +322,7 @@ function PlacesContent() {
                   : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700'
                 }`}
             >
-              {cat === 'all' ? '전체' : CATEGORY_LABEL[cat]}
+              {cat === 'all' ? t.allCategories : ({ attraction: t.catAttraction, food: t.catFood, nature: t.catNature, culture: t.catCulture, shopping: t.catShopping, activity: t.catActivity } as Record<string,string>)[cat] ?? cat}
             </button>
           ))}
         </div>
@@ -338,7 +337,7 @@ function PlacesContent() {
             <div>
               <p className="text-violet-800 font-semibold text-sm line-clamp-2">{eventTitle}</p>
               {eventDate && (
-                <p className="text-violet-500 text-xs mt-0.5">{eventDate} · 이 행사를 기준으로 여행 코스를 골라보세요</p>
+                <p className="text-violet-500 text-xs mt-0.5">{t.eventVenueDesc(eventDate)}</p>
               )}
             </div>
           </div>
@@ -347,12 +346,12 @@ function PlacesContent() {
         {selected.length > 0 && (
           <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200
             text-blue-700 text-sm font-medium">
-            {selected.length}개 선택 완료 · 원하는 곳을 더 선택하거나{' '}
+            {t.selectionNotice(selected.length)}{' '}
             <button
               onClick={handleGenerate}
               className="underline font-bold hover:text-blue-900"
             >
-              일정 생성하기
+              {t.selectionNoticeLink}
             </button>
           </div>
         )}
@@ -379,7 +378,7 @@ function PlacesContent() {
         >
           <div className="max-w-6xl mx-auto flex items-center gap-4">
             <div className="flex-1">
-              <p className="text-slate-900 font-semibold">{selected.length}개 장소 선택됨</p>
+              <p className="text-slate-900 font-semibold">{t.nSelectedSpots(selected.length)}</p>
               <p className="text-slate-500 text-sm">
                 {selected
                   .map((id) => spots.find((s) => s.id === id)?.name)
@@ -392,7 +391,7 @@ function PlacesContent() {
               className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl font-bold
                 bg-blue-600 hover:bg-blue-500 text-white text-sm shadow-sm"
             >
-              일정 리포트 생성
+              {t.generateReport}
               <ChevronRight size={18} />
             </button>
           </div>

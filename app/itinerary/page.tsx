@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { buildItinerary, formatDuration } from '@/lib/utils/itinerary';
 import type { TravelSpot, ItineraryReport, TransportLeg, NearbyRestaurant, NearbyAccommodation, RegionalApp, RegionalEvent } from '@/lib/types';
+import { useLang } from '@/lib/context/LangContext';
 
 const TRANSPORT_ICON: Record<string, React.ElementType> = {
   subway: Train,
@@ -58,6 +59,7 @@ const TRANSPORT_LABEL: Record<string, string> = {
 
 function TransportCard({ leg }: { leg: TransportLeg }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useLang();
 
   const recommended = leg.methods.find((m) => TRANSPORT_LABEL[m.type] === leg.recommendedMethod)
     ?? leg.methods.reduce((b, m) => (m.duration < b.duration ? m : b), leg.methods[0]);
@@ -82,7 +84,7 @@ function TransportCard({ leg }: { leg: TransportLeg }) {
               <p className="text-slate-800 text-sm font-semibold">
                 {leg.from} → {leg.to}
               </p>
-              <p className="text-slate-400 text-xs mt-0.5">거리 약 {leg.distanceKm}km</p>
+              <p className="text-slate-400 text-xs mt-0.5">{t.distanceLabel(leg.distanceKm)}</p>
             </div>
             <div className="text-right shrink-0">
               <p className={`font-bold text-sm ${TRANSPORT_COLOR[recommended.type]}`}>
@@ -96,7 +98,7 @@ function TransportCard({ leg }: { leg: TransportLeg }) {
             onClick={() => setExpanded(!expanded)}
             className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
           >
-            {expanded ? '교통 옵션 접기 ▲' : '다른 교통 옵션 보기 ▼'}
+            {expanded ? t.transportCollapse : t.transportExpand}
           </button>
 
           {expanded && (
@@ -808,6 +810,7 @@ export default function ItineraryPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [report, setReport] = useState<ItineraryReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const { t, lang } = useLang();
 
   useEffect(() => {
     const spotsJson = sessionStorage.getItem('travel_spots');
@@ -829,7 +832,7 @@ export default function ItineraryPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">일정을 생성하고 있어요...</p>
+          <p className="text-slate-600">{t.generatingItinerary}</p>
         </div>
       </div>
     );
@@ -850,8 +853,8 @@ export default function ItineraryPage() {
             <ArrowLeft size={20} />
           </button>
           <div className="flex-1">
-            <h1 className="font-bold text-slate-900">{report.region} 여행 일정</h1>
-            <p className="text-slate-500 text-sm">{report.spots.length}개 장소 · 총 {totalHours > 0 ? `${totalHours}시간 ` : ''}{totalMins > 0 ? `${totalMins}분` : ''}</p>
+            <h1 className="font-bold text-slate-900">{t.itineraryHeader(report.region)}</h1>
+            <p className="text-slate-500 text-sm">{t.itinerarySubHeader(report.spots.length, totalHours, totalMins)}</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -860,7 +863,7 @@ export default function ItineraryPage() {
                 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors"
             >
               <Printer size={16} />
-              <span className="hidden sm:inline">인쇄</span>
+              <span className="hidden sm:inline">{t.printBtn}</span>
             </button>
             <button
               onClick={() => { router.push('/') }}
@@ -868,7 +871,7 @@ export default function ItineraryPage() {
                 bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-colors"
             >
               <Download size={16} />
-              <span className="hidden sm:inline">새 여행</span>
+              <span className="hidden sm:inline">{t.newTripBtn}</span>
             </button>
           </div>
         </div>
@@ -885,18 +888,18 @@ export default function ItineraryPage() {
             <MapPin className="text-white/80" size={22} />
             <span className="text-white/80 font-semibold">{report.region}</span>
           </div>
-          <h2 className="text-3xl font-black text-white mb-1">{report.region} 여행 일정표</h2>
-          <p className="text-white/60 text-sm">생성일: {report.generatedAt}</p>
+          <h2 className="text-3xl font-black text-white mb-1">{t.itineraryTitle(report.region)}</h2>
+          <p className="text-white/60 text-sm">{t.generatedAt} {report.generatedAt}</p>
 
           {report.routeOptimized && (
             <div className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full text-sm font-semibold bg-white/20 border border-white/30">
               <Zap size={14} className="text-yellow-300" />
-              <span className="text-white">경로 최적화 완료</span>
+              <span className="text-white">{t.routeOptimized}</span>
               <span className="text-white/70 text-xs">
                 {report.originalDistanceKm}km → {report.optimizedDistanceKm}km
                 {report.originalDistanceKm > report.optimizedDistanceKm && (
                   <> · <span className="text-yellow-300 font-bold">
-                    {Math.round((report.originalDistanceKm - report.optimizedDistanceKm) * 10) / 10}km 단축
+                    {t.distanceShortened(Math.round((report.originalDistanceKm - report.optimizedDistanceKm) * 10) / 10)}
                   </span></>
                 )}
               </span>
@@ -905,9 +908,9 @@ export default function ItineraryPage() {
 
           <div className="grid grid-cols-3 gap-4 mt-6">
             {[
-              { label: '방문 장소', value: `${report.spots.length}곳` },
-              { label: '총 소요 시간', value: formatDuration(report.totalDuration) },
-              { label: '총 이동 거리', value: `${report.optimizedDistanceKm}km` },
+              { label: t.statSpots, value: t.spotsN(report.spots.length) },
+              { label: t.statTime, value: formatDuration(report.totalDuration) },
+              { label: t.statDistance, value: `${report.optimizedDistanceKm}km` },
             ].map((stat) => (
               <div key={stat.label} className="bg-white/15 rounded-xl p-3">
                 <p className="text-white/60 text-xs mb-1">{stat.label}</p>
@@ -922,12 +925,12 @@ export default function ItineraryPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
               <Route className="text-blue-600" size={20} />
-              최적 이동 동선
+              {t.routeSummaryTitle}
             </h2>
             {report.routeOptimized && (
               <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
                 <Zap size={12} />
-                AI 경로 최적화 적용됨
+                {t.routeOptimizedBadge}
               </span>
             )}
           </div>
@@ -951,7 +954,7 @@ export default function ItineraryPage() {
         <section className="mb-8">
           <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900 mb-6">
             <Clock className="text-purple-600" size={20} />
-            상세 일정 및 교통 안내
+            {t.detailedRouteTitle}
           </h2>
 
           <div className="relative pl-5">
@@ -974,7 +977,7 @@ export default function ItineraryPage() {
         <section className="mb-8">
           <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900 mb-4">
             <Info className="text-cyan-600" size={20} />
-            여행지 상세 정보
+            {t.spotDetailTitle}
           </h2>
 
           <div className="grid gap-4">
@@ -1024,7 +1027,7 @@ export default function ItineraryPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">여행 팁</p>
+                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">{t.travelTipsLabel}</p>
                     <ul className="space-y-2">
                       {spot.tips.map((tip, ti) => (
                         <li key={ti} className="flex items-start gap-2 text-xs text-slate-700">
@@ -1051,24 +1054,21 @@ export default function ItineraryPage() {
           <div className="bg-green-50 border border-green-200 rounded-xl p-5">
             <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-3">
               <Ticket className="text-green-600" size={19} />
-              예상 경비 안내
+              {t.budgetTitle}
             </h2>
             <p className="text-green-700 font-semibold text-lg">{report.estimatedTotalCost}</p>
-            <p className="text-slate-500 text-xs mt-1">
-              * 식사비, 숙박비, 개인 쇼핑 비용은 미포함입니다.
-              실제 비용은 방문 시점의 요금을 확인하세요.
-            </p>
+            <p className="text-slate-500 text-xs mt-1">{t.budgetNote}</p>
           </div>
         </section>
 
-        {/* Travel Benefits */}
-        <TravelBenefitsSection region={report.region} />
+        {/* Travel Benefits — 한국어 모드에서만 표시 */}
+        {lang === 'ko' && <TravelBenefitsSection region={report.region} />}
 
         {/* Region Tips */}
         <section className="mb-8">
           <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900 mb-4">
             <LightbulbIcon className="text-amber-500" size={20} />
-            {report.region} 여행 필수 정보
+            {t.regionalTipsTitle(report.region)}
           </h2>
           <div className="grid gap-3">
             {report.tips.map((tip, i) => (
@@ -1090,7 +1090,7 @@ export default function ItineraryPage() {
         <section className="mb-8">
           <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900 mb-4">
             <Smartphone className="text-blue-600" size={20} />
-            공식 관광 앱 &amp; 사이트
+            {t.regionalAppsTitle}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {report.regionalApps.map((app, i) => (
@@ -1104,13 +1104,13 @@ export default function ItineraryPage() {
           <div className="bg-red-50 border border-red-200 rounded-xl p-5">
             <h2 className="flex items-center gap-2 text-lg font-bold text-red-700 mb-4">
               <Phone size={19} />
-              긴급 연락처
+              {t.emergencyTitle}
             </h2>
             <div className="grid sm:grid-cols-3 gap-3">
               {[
-                { label: '관광 안내 (다국어)', value: report.emergencyInfo.touristHotline },
-                { label: '경찰 신고', value: report.emergencyInfo.policeEmergency },
-                { label: '소방·응급', value: report.emergencyInfo.medicalEmergency },
+                { label: t.emergencyHotline, value: report.emergencyInfo.touristHotline },
+                { label: t.emergencyPolice, value: report.emergencyInfo.policeEmergency },
+                { label: t.emergencyMedical, value: report.emergencyInfo.medicalEmergency },
               ].map((item) => (
                 <div key={item.label} className="text-center">
                   <p className="text-red-500 text-xs mb-1">{item.label}</p>

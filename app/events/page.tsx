@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ALL_REGIONS } from '@/lib/data/koreaData';
+import { useLang } from '@/lib/context/LangContext';
 
 const SUPPORTED_REGIONS = new Set(ALL_REGIONS.map((r) => r.name));
 
@@ -85,6 +86,7 @@ function EventCard({
   onPlan: () => void;
 }) {
   const [imgErr, setImgErr] = useState(false);
+  const { t } = useLang();
 
   return (
     <div className="flex flex-col rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200">
@@ -113,7 +115,7 @@ function EventCard({
               : 'bg-blue-100 text-blue-700 border-blue-300'
             }`}
         >
-          {event.status === 'ongoing' ? '진행중' : '예정'}
+          {event.status === 'ongoing' ? t.ongoing : t.upcoming}
         </span>
 
         {event.province && (
@@ -153,8 +155,8 @@ function EventCard({
           >
             <MapPin size={13} />
             {effectiveRegion
-              ? `${effectiveRegion} 여행 계획하기`
-              : `${event.regionName || event.province || '지역 미상'} (미지원)`}
+              ? t.planTrip(effectiveRegion)
+              : t.unsupportedRegion(event.regionName || event.province)}
             {effectiveRegion && <ChevronRight size={14} />}
           </button>
         </div>
@@ -163,23 +165,26 @@ function EventCard({
   );
 }
 
-const DATE_TABS = [
-  { label: '이번달~', getFrom: kstToday },
-  { label: '다음달~', getFrom: nextMonthFirst },
-  { label: '3개월 후~', getFrom: threeMonthsLater },
-];
+const DATE_TAB_FROMS = [kstToday, nextMonthFirst, threeMonthsLater];
 
 export default function EventsPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [tab, setTab] = useState(0);
   const [province, setProvince] = useState('전체');
   const [events, setEvents] = useState<BrowseEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const DATE_TABS = [
+    { label: t.thisMonth, getFrom: DATE_TAB_FROMS[0] },
+    { label: t.nextMonth, getFrom: DATE_TAB_FROMS[1] },
+    { label: t.threeMonths, getFrom: DATE_TAB_FROMS[2] },
+  ];
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const from = DATE_TABS[tab].getFrom();
+      const from = DATE_TAB_FROMS[tab]();
       const prov = province === '전체' ? '' : province;
       const qs = new URLSearchParams({ from });
       if (prov) qs.set('province', prov);
@@ -220,8 +225,8 @@ export default function EventsPage() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="font-bold text-slate-900 text-lg leading-tight">행사·축제로 여행하기</h1>
-            <p className="text-slate-500 text-sm">전국 축제·행사를 먼저 찾고 여행 계획을 세워보세요</p>
+            <h1 className="font-bold text-slate-900 text-lg leading-tight">{t.eventsTitle}</h1>
+            <p className="text-slate-500 text-sm">{t.eventsSubtitle}</p>
           </div>
         </div>
 
@@ -265,24 +270,24 @@ export default function EventsPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 size={40} className="text-blue-500 animate-spin" />
-            <p className="text-slate-600 font-medium">전국 행사·축제 정보를 불러오는 중...</p>
-            <p className="text-slate-400 text-sm">TourAPI 데이터를 조회하고 있어요</p>
+            <p className="text-slate-600 font-medium">{t.loadingEvents}</p>
+            <p className="text-slate-400 text-sm">{t.loadingEventsApi}</p>
           </div>
         ) : events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Sparkles size={48} className="text-slate-300" />
-            <p className="text-slate-600 font-medium">해당 기간·지역에 행사 정보가 없어요</p>
+            <p className="text-slate-600 font-medium">{t.noEvents}</p>
             <button
               onClick={() => { setProvince('전체'); setTab(0); }}
               className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm"
             >
-              필터 초기화
+              {t.resetFilter}
             </button>
           </div>
         ) : (
           <>
             <p className="text-slate-500 text-sm mb-4">
-              {events.length}개 행사·축제 {province !== '전체' && `· ${province}`}
+              {t.eventsFound(events.length, province)}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {events.map((ev) => {

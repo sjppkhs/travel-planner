@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, MapPin, ChevronRight, Sparkles } from 'lucide-react';
 import { ALL_REGIONS, getRegionSuggestions } from '@/lib/data/koreaData';
+import { useLang } from '@/lib/context/LangContext';
 
 const FEATURED = [
   { name: '서울', emoji: '🏙️', desc: '고궁·한강·야경의 수도' },
@@ -58,6 +59,7 @@ const PROVINCE_TABS = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useLang();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<ReturnType<typeof getRegionSuggestions>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -101,19 +103,19 @@ export default function HomePage() {
         <div className="relative z-10 max-w-2xl w-full">
           <div className="mb-4 flex items-center justify-center gap-2">
             <MapPin className="text-yellow-300" size={28} />
-            <span className="text-yellow-300 font-semibold text-lg tracking-wide">한국 여행 플래너</span>
+            <span className="text-yellow-300 font-semibold text-lg tracking-wide">{t.heroLabel}</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
-            <span className="text-white">어디로</span>
+            <span className="text-white">{t.tagline1}</span>
             <br />
             <span style={{ background: 'linear-gradient(135deg, #fde68a, #ffffff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              떠나고 싶으신가요?
+              {t.tagline2}
             </span>
           </h1>
 
           <p className="text-white/80 text-lg mb-4">
-            전국 <span className="text-yellow-300 font-semibold">{ALL_REGIONS.length}개 지역</span> 여행지를 추천해드려요
+            <span className="text-yellow-300 font-semibold">{t.regionCountDesc(ALL_REGIONS.length)}</span>
           </p>
 
           <form onSubmit={handleSubmit} className="relative w-full mb-6">
@@ -125,7 +127,7 @@ export default function HomePage() {
                 onChange={(e) => handleInput(e.target.value)}
                 onFocus={() => { setSuggestions(getRegionSuggestions(query)); setShowSuggestions(true); }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                placeholder="지역명 또는 키워드 입력 (예: 강릉, 단양, 서핑...)"
+                placeholder={t.searchPlaceholder}
                 className="w-full pl-12 pr-14 py-4 rounded-2xl text-base font-medium
                   bg-white/20 backdrop-blur-sm border border-white/30
                   text-white placeholder-white/50
@@ -184,8 +186,8 @@ export default function HomePage() {
             <Sparkles size={26} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-white text-lg leading-tight">행사·축제로 여행 계획하기</div>
-            <div className="text-white/75 text-sm mt-0.5">전국 축제·행사를 먼저 찾고 여행 코스를 정해보세요</div>
+            <div className="font-bold text-white text-lg leading-tight">{t.eventBannerTitle}</div>
+            <div className="text-white/75 text-sm mt-0.5">{t.eventBannerDesc}</div>
           </div>
           <ChevronRight size={22} className="shrink-0 text-white/60" />
         </button>
@@ -193,8 +195,8 @@ export default function HomePage() {
 
       {/* 도별 탭 지역 브라우저 */}
       <section className="max-w-5xl mx-auto w-full px-4 py-10">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">지역별 찾아보기</h2>
-        <p className="text-slate-500 mb-6">도·권역 탭을 선택해 원하는 지역을 찾아보세요</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{t.browseByRegion}</h2>
+        <p className="text-slate-500 mb-6">{t.browseByRegionDesc}</p>
 
         {/* 탭 */}
         <div className="flex gap-2 flex-wrap mb-5">
@@ -237,8 +239,8 @@ export default function HomePage() {
 
       {/* 인기 여행지 */}
       <section className="max-w-5xl mx-auto w-full px-4 pb-16">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">인기 여행지</h2>
-        <p className="text-slate-500 mb-8">지금 가장 많이 찾는 한국 여행지를 둘러보세요</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{t.popularDestinations}</h2>
+        <p className="text-slate-500 mb-8">{t.popularDesc}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURED.map((f) => (
             <button
@@ -262,12 +264,12 @@ export default function HomePage() {
       {/* 이용 안내 */}
       <section className="py-16 px-4 bg-white border-t border-slate-100">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-10">이렇게 사용하세요</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-10">{t.howToUse}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
-              { step: '01', title: '지역 선택', desc: '전국 어디든 지역명으로 검색하세요' },
-              { step: '02', title: '장소 선택', desc: '이미지를 보면서 가고 싶은 곳을 골라보세요' },
-              { step: '03', title: '일정 확인', desc: '이동 경로·교통·지원금 정보가 담긴 리포트를 받으세요' },
+              { step: '01', title: t.step1Title, desc: t.step1Desc },
+              { step: '02', title: t.step2Title, desc: t.step2Desc },
+              { step: '03', title: t.step3Title, desc: t.step3Desc },
             ].map((item) => (
               <div key={item.step} className="flex flex-col items-center">
                 <div
@@ -285,7 +287,7 @@ export default function HomePage() {
       </section>
 
       <footer className="text-center py-6 text-slate-400 text-sm border-t border-slate-200 bg-white">
-        © 2026 한국 여행 플래너 · 전국 {ALL_REGIONS.length}개 지역 지원
+        {t.footerText(ALL_REGIONS.length)}
       </footer>
     </main>
   );
