@@ -35,6 +35,7 @@ import {
 import { buildItinerary, formatDuration } from '@/lib/utils/itinerary';
 import type { TravelSpot, ItineraryReport, TransportLeg, NearbyRestaurant, NearbyAccommodation, RegionalApp, RegionalEvent } from '@/lib/types';
 import { useLang } from '@/lib/context/LangContext';
+import { HALF_PRICE_ELIGIBLE, CAPITAL_REGIONS, GROUP_INFO, type GroupType } from '@/lib/data/benefits';
 
 const TRANSPORT_ICON: Record<string, React.ElementType> = {
   subway: Train,
@@ -196,25 +197,6 @@ function SpotSummaryCard({ spot, index }: { spot: TravelSpot & { visitOrder: num
 }
 
 // ── 여행 지원 혜택 ────────────────────────────────────────────────────
-
-const HALF_PRICE_ELIGIBLE: Set<string> = new Set([
-  '남해', '밀양', '하동', '합천', '거창',
-  '강진', '영광', '해남', '고흥', '완도', '영암',
-  '고창',
-  '제천',
-  '평창', '영월', '횡성',
-]);
-
-const CAPITAL_REGIONS: Set<string> = new Set(['서울', '인천', '경기', '수원']);
-
-type GroupType = 'solo' | 'youth' | 'couple' | 'family';
-
-const GROUP_INFO: Record<GroupType, { label: string; cap: number; rate: number; desc: string }> = {
-  solo:   { label: '1인',          cap: 100000, rate: 0.5,  desc: '여행 경비의 50% 환급, 최대 10만원' },
-  youth:  { label: '청년 (19~34세)', cap: 140000, rate: 0.7,  desc: '여행 경비의 70% 환급, 최대 14만원' },
-  couple: { label: '2인 이상',      cap: 200000, rate: 0.5,  desc: '여행 경비의 50% 환급, 최대 20만원' },
-  family: { label: '대가족 (5인+)', cap: 500000, rate: 0.5,  desc: '여행 경비의 50% 환급, 최대 50만원' },
-};
 
 function TravelBenefitsSection({ region }: { region: string }) {
   const isHalfPriceEligible = HALF_PRICE_ELIGIBLE.has(region);

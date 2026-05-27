@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   ArrowLeft,
+  BadgePercent,
   Check,
   ChevronRight,
   Clock,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { TravelSpot } from '@/lib/types';
 import { useLang } from '@/lib/context/LangContext';
+import { HALF_PRICE_ELIGIBLE } from '@/lib/data/benefits';
 
 const CATEGORY_KEYS = ['attraction', 'food', 'nature', 'culture', 'shopping', 'activity'] as const;
 
@@ -166,8 +168,9 @@ const SOURCE_BADGE: Record<string, { label: string; color: string }> = {
 function PlacesContent() {
   const router = useRouter();
   const params = useSearchParams();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const region = params.get('region') ?? '';
+  const isHalfPrice = HALF_PRICE_ELIGIBLE.has(region);
   const eventTitle = params.get('eventTitle') ?? '';
   const eventDate = params.get('eventDate') ?? '';
   const eventAddr = params.get('eventAddr') ?? '';
@@ -280,9 +283,18 @@ function PlacesContent() {
             <ArrowLeft size={20} />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-slate-900 text-lg leading-tight">
-              {t.selectingPlaces(region)}
-            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-bold text-slate-900 text-lg leading-tight">
+                {t.selectingPlaces(region)}
+              </h1>
+              {isHalfPrice && lang === 'ko' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                  bg-emerald-100 border border-emerald-300 text-emerald-700 text-xs font-bold">
+                  <BadgePercent size={11} />
+                  반값지원 가능
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <p className="text-slate-500 text-sm">
                 {t.nSpots(spots.length)} · {t.nSelected(selected.length)}
@@ -330,6 +342,21 @@ function PlacesContent() {
 
       {/* Grid */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+        {/* 반값여행지원 배너 */}
+        {isHalfPrice && lang === 'ko' && (
+          <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
+            <BadgePercent size={18} className="text-emerald-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-emerald-800 font-bold text-sm">
+                {region}은(는) 반값여행지원금 대상 지역이에요!
+              </p>
+              <p className="text-emerald-600 text-xs mt-0.5">
+                여행 경비의 50~70% 환급 · 청년 최대 14만원 · <span className="font-semibold">여행 전 사전 신청 필수</span>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* 행사 출발 배너 */}
         {eventTitle && (
           <div className="mb-4 p-4 rounded-xl bg-violet-50 border border-violet-200 flex items-start gap-3">

@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, MapPin, ChevronRight, Sparkles, BadgePercent } from 'lucide-react';
 import { ALL_REGIONS, getRegionSuggestions } from '@/lib/data/koreaData';
 import { useLang } from '@/lib/context/LangContext';
+import { HALF_PRICE_BY_PROVINCE, GROUP_INFO } from '@/lib/data/benefits';
 
 const FEATURED = [
   { name: '서울', emoji: '🏙️', desc: '고궁·한강·야경의 수도' },
@@ -59,7 +60,7 @@ const PROVINCE_TABS = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<ReturnType<typeof getRegionSuggestions>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -193,6 +194,71 @@ export default function HomePage() {
         </button>
       </section>
 
+      {/* 반값여행지원 — 한국어 모드에서만 표시 */}
+      {lang === 'ko' && (
+        <section className="max-w-5xl mx-auto w-full px-4 pt-2 pb-6">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden shadow-sm">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-emerald-200 bg-white">
+              <div className="flex items-center gap-2">
+                <BadgePercent size={20} className="text-emerald-600 shrink-0" />
+                <div>
+                  <p className="font-bold text-slate-900 text-sm leading-tight">반값여행지원금 가능 지역으로 계획하기</p>
+                  <p className="text-slate-500 text-xs mt-0.5">2026년 상반기 · 여행 경비 50~70% 환급</p>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-emerald-700 font-black text-lg leading-tight">최대 50만원</p>
+                <p className="text-emerald-500 text-xs">청년 14만원 환급</p>
+              </div>
+            </div>
+
+            {/* 환급 요약 칩 */}
+            <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-emerald-100">
+              {Object.entries(GROUP_INFO).map(([, g]) => (
+                <span key={g.label} className="inline-flex items-center gap-1 px-3 py-1 rounded-full
+                  bg-white border border-emerald-200 text-xs font-semibold text-emerald-700">
+                  {g.label} <span className="text-slate-400 font-normal">·</span>
+                  최대 {(g.cap / 10000).toFixed(0)}만원 {Math.round(g.rate * 100)}%
+                </span>
+              ))}
+            </div>
+
+            {/* 지역별 버튼 그리드 */}
+            <div className="px-5 py-4 space-y-3">
+              {HALF_PRICE_BY_PROVINCE.map(({ province, regions }) => (
+                <div key={province} className="flex items-start gap-3">
+                  <span className="shrink-0 mt-1 px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">
+                    {province}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {regions.map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => navigate(r)}
+                        className="px-3 py-1.5 rounded-xl text-sm font-semibold
+                          bg-white border border-emerald-300 text-emerald-800
+                          hover:bg-emerald-600 hover:text-white hover:border-emerald-600
+                          transition-all shadow-sm flex items-center gap-1"
+                      >
+                        <BadgePercent size={12} className="opacity-70" />
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 안내 */}
+            <div className="px-5 py-3 bg-emerald-100/60 text-xs text-emerald-800 flex items-start gap-2">
+              <span className="shrink-0">📋</span>
+              <span>여행 <span className="font-semibold">전</span> 사전 신청 필수 · 환급금은 지역사랑상품권(착 앱)으로 지급 · 인접 시군구 거주자 제외</span>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 도별 탭 지역 브라우저 */}
       <section className="max-w-5xl mx-auto w-full px-4 py-10">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">{t.browseByRegion}</h2>
@@ -219,17 +285,22 @@ export default function HomePage() {
         <div className="flex flex-wrap gap-2">
           {PROVINCE_TABS[activeTab].regions.map((r) => {
             const info = ALL_REGIONS.find((a) => a.name === r);
+            const halfPrice = lang === 'ko' && HALF_PRICE_BY_PROVINCE.some((p) => p.regions.includes(r));
             return (
               <button
                 key={r}
                 onClick={() => navigate(r)}
-                className="group flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium
-                  bg-white hover:bg-blue-600 border border-slate-200 hover:border-blue-500
-                  text-slate-700 hover:text-white transition-all shadow-sm"
+                className={`group flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium
+                  transition-all shadow-sm
+                  ${halfPrice
+                    ? 'bg-emerald-50 border border-emerald-300 text-emerald-800 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white'
+                    : 'bg-white border border-slate-200 hover:bg-blue-600 hover:border-blue-500 text-slate-700 hover:text-white'
+                  }`}
               >
+                {halfPrice && <BadgePercent size={12} className="opacity-70 shrink-0" />}
                 <span>{r.replace('(강원)', '').replace('(경남)', '')}</span>
                 {info?.tags?.[0] && (
-                  <span className="text-slate-400 group-hover:text-blue-100 text-xs">· {info.tags[0]}</span>
+                  <span className={`text-xs ${halfPrice ? 'text-emerald-500 group-hover:text-emerald-100' : 'text-slate-400 group-hover:text-blue-100'}`}>· {info.tags[0]}</span>
                 )}
               </button>
             );
