@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+
+const RouteMap = dynamic(() => import('@/app/components/RouteMap'), { ssr: false });
 import {
   ArrowLeft,
   BadgePercent,
@@ -930,6 +933,15 @@ export default function ItineraryPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* 지도 */}
+        <section className="mb-8 no-print">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900 mb-4">
+            <MapPin className="text-blue-600" size={20} />
+            전체 일정 지도
+          </h2>
+          <RouteMap spots={report.spots} region={report.region} />
         </section>
 
         {/* Detailed Itinerary */}
