@@ -1,26 +1,37 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   ArrowLeft,
   BadgePercent,
+  Building2,
   Check,
   ChevronRight,
   Clock,
   Database,
+  ExternalLink,
   Globe,
+  Landmark,
   Loader2,
   MapPin,
+  Palette,
+  Phone,
+  ShoppingBag,
   Sparkles,
   Star,
   Tag,
   Ticket,
+  TreePine,
+  Utensils,
+  X,
+  Zap,
 } from 'lucide-react';
 import type { TravelSpot } from '@/lib/types';
 import { useLang } from '@/lib/context/LangContext';
-import { HALF_PRICE_ELIGIBLE } from '@/lib/data/benefits';
+import { HALF_PRICE_ELIGIBLE, GROUP_INFO } from '@/lib/data/benefits';
+import type { HalfPriceItem } from '@/lib/data/benefits';
 
 const CATEGORY_KEYS = ['attraction', 'food', 'nature', 'culture', 'shopping', 'activity'] as const;
 
@@ -33,6 +44,194 @@ const CATEGORY_COLOR: Record<string, string> = {
   activity: 'bg-cyan-100 text-cyan-700 border-cyan-300',
 };
 
+const CATEGORY_ICON: Record<string, React.ReactNode> = {
+  attraction: <Landmark size={11} />,
+  food: <Utensils size={11} />,
+  nature: <TreePine size={11} />,
+  culture: <Palette size={11} />,
+  shopping: <ShoppingBag size={11} />,
+  activity: <Zap size={11} />,
+};
+
+// ── 반값 팝업 탭 ──────────────────────────────────────────────────
+type DrawerTab = 'attraction' | 'food' | 'lodging';
+const DRAWER_TABS: { key: DrawerTab; label: string; icon: React.ReactNode }[] = [
+  { key: 'attraction', label: '관광지', icon: <Landmark size={14} /> },
+  { key: 'food',       label: '식당',   icon: <Utensils size={14} /> },
+  { key: 'lodging',    label: '숙박',   icon: <Building2 size={14} /> },
+];
+
+function HalfPriceDrawer({
+  region,
+  open,
+  onClose,
+}: {
+  region: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<DrawerTab>('attraction');
+  const [data, setData] = useState<{ attractions: HalfPriceItem[]; restaurants: HalfPriceItem[]; lodging: HalfPriceItem[] } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const fetched = useRef(false);
+
+  useEffect(() => {
+    if (open && !fetched.current) {
+      fetched.current = true;
+      setLoading(true);
+      fetch(`/api/half-price?region=${encodeURIComponent(region)}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d) => setData(d))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [open, region]);
+
+  const items =
+    data
+      ? tab === 'attraction'
+        ? data.attractions
+        : tab === 'food'
+          ? data.restaurants
+          : data.lodging
+      : [];
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/40 z-50"
+        onClick={onClose}
+      />
+
+      {/* Sheet */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col max-h-[85dvh]
+        bg-white rounded-t-2xl shadow-2xl overflow-hidden">
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-slate-200" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 shrink-0">
+          <div>
+            <div className="flex items-center gap-2">
+              <BadgePercent size={16} className="text-emerald-600" />
+              <span className="font-bold text-slate-900">{region} 반값여행 정보</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">2026 상반기 · 50~70% 환급</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* 환급 칩 */}
+        <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-slate-100 shrink-0">
+          {Object.values(GROUP_INFO).map((g) => (
+            <span
+              key={g.label}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700"
+            >
+              {g.label}
+              <span className="text-slate-300">·</span>
+              최대 {(g.cap / 10000).toFixed(0)}만원
+            </span>
+          ))}
+        </div>
+
+        {/* 탭 */}
+        <div className="px-5 py-2 flex gap-1 border-b border-slate-100 shrink-0">
+          {DRAWER_TABS.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all
+                ${tab === key
+                  ? 'bg-emerald-500 text-white'
+                  : 'text-slate-500 hover:text-slate-800'
+                }`}
+            >
+              {icon}{label}
+            </button>
+          ))}
+        </div>
+
+        {/* 아이템 목록 */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader2 size={28} className="text-emerald-500 animate-spin" />
+              <p className="text-slate-400 text-sm">{region} 정보를 불러오는 중...</p>
+            </div>
+          )}
+
+          {!loading && items.length === 0 && (
+            <p className="text-center text-slate-400 text-sm py-12">
+              등록된 {DRAWER_TABS.find((t) => t.key === tab)?.label} 정보가 없어요
+            </p>
+          )}
+
+          {!loading && items.length > 0 && (
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex gap-3 bg-slate-50 rounded-xl p-3 border border-slate-200"
+                >
+                  {item.imageUrl ? (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg shrink-0 bg-emerald-100 flex items-center justify-center">
+                      <MapPin size={20} className="text-emerald-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900 text-sm leading-tight line-clamp-2">{item.name}</p>
+                    {item.address && (
+                      <p className="text-slate-400 text-xs mt-1 line-clamp-1">{item.address}</p>
+                    )}
+                    {item.tel && (
+                      <p className="text-emerald-600 text-xs mt-1 flex items-center gap-1">
+                        <Phone size={10} className="shrink-0" /> {item.tel}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 착 앱 안내 */}
+        <div className="px-5 py-3 border-t border-slate-100 bg-amber-50 shrink-0">
+          <div className="flex items-start gap-2 text-xs text-amber-800">
+            <ExternalLink size={13} className="shrink-0 mt-0.5 text-amber-600" />
+            <span>
+              환급금은 <span className="font-semibold">지역사랑상품권(착 앱)</span>으로 지급됩니다.
+              여행 <span className="font-semibold">전</span> 사전 신청 필수 · 앱스토어에서 <span className="font-semibold">「지역사랑상품권 착」</span> 검색
+            </span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── 장소 카드 ────────────────────────────────────────────────────
 function PlaceCard({
   spot,
   selected,
@@ -87,7 +286,7 @@ function PlaceCard({
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-        {/* 행사장 배지 or Category badge */}
+        {/* 행사장 배지 or Category badge with icon */}
         {isEventVenue ? (
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold border
             bg-violet-500 text-white border-violet-400 flex items-center gap-1">
@@ -97,8 +296,9 @@ function PlaceCard({
         ) : (
           <span
             className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold border
-              ${CATEGORY_COLOR[spot.category]}`}
+              flex items-center gap-1 ${CATEGORY_COLOR[spot.category]}`}
           >
+            {CATEGORY_ICON[spot.category]}
             {catLabel[spot.category]}
           </span>
         )}
@@ -185,6 +385,7 @@ function PlacesContent() {
     eventTitle ? ['event-venue'] : [],
   );
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!region) return;
@@ -288,11 +489,15 @@ function PlacesContent() {
                 {t.selectingPlaces(region)}
               </h1>
               {isHalfPrice && lang === 'ko' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                  bg-emerald-100 border border-emerald-300 text-emerald-700 text-xs font-bold">
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                    bg-emerald-100 border border-emerald-300 text-emerald-700 text-xs font-bold
+                    hover:bg-emerald-200 transition-colors"
+                >
                   <BadgePercent size={11} />
-                  반값지원 가능
-                </span>
+                  반값지원 가능 · 정보 보기
+                </button>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -328,12 +533,13 @@ function PlacesContent() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium border transition-all
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border transition-all
                 ${activeCategory === cat
                   ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
                   : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700'
                 }`}
             >
+              {cat !== 'all' && CATEGORY_ICON[cat]}
               {cat === 'all' ? t.allCategories : ({ attraction: t.catAttraction, food: t.catFood, nature: t.catNature, culture: t.catCulture, shopping: t.catShopping, activity: t.catActivity } as Record<string,string>)[cat] ?? cat}
             </button>
           ))}
@@ -344,17 +550,25 @@ function PlacesContent() {
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
         {/* 반값여행지원 배너 */}
         {isHalfPrice && lang === 'ko' && (
-          <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-            <BadgePercent size={18} className="text-emerald-600 mt-0.5 shrink-0" />
-            <div>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="w-full mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200
+              flex items-center gap-3 text-left hover:bg-emerald-100 transition-colors group"
+          >
+            <BadgePercent size={18} className="text-emerald-600 shrink-0" />
+            <div className="flex-1">
               <p className="text-emerald-800 font-bold text-sm">
                 {region}은(는) 반값여행지원금 대상 지역이에요!
               </p>
               <p className="text-emerald-600 text-xs mt-0.5">
-                여행 경비의 50~70% 환급 · 청년 최대 14만원 · <span className="font-semibold">여행 전 사전 신청 필수</span>
+                여행 경비의 50~70% 환급 · 청년 최대 14만원 · 사전 신청 필수
               </p>
             </div>
-          </div>
+            <span className="text-emerald-600 text-xs font-semibold flex items-center gap-0.5 shrink-0
+              group-hover:translate-x-0.5 transition-transform">
+              관광지·식당·숙박 보기 <ChevronRight size={14} />
+            </span>
+          </button>
         )}
 
         {/* 행사 출발 배너 */}
@@ -423,6 +637,15 @@ function PlacesContent() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 반값 bottom-sheet 팝업 */}
+      {isHalfPrice && lang === 'ko' && (
+        <HalfPriceDrawer
+          region={region}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        />
       )}
     </div>
   );

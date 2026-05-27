@@ -1,5 +1,16 @@
 // 반값여행지원금 (지역사랑 휴가지원 시범사업) 데이터
 
+export interface HalfPriceItem {
+  id: string;
+  name: string;
+  address: string;
+  imageUrl: string;
+  tel: string;
+  lat: number;
+  lng: number;
+  contentTypeId: string;
+}
+
 export type GroupType = 'solo' | 'youth' | 'couple' | 'family';
 
 export const GROUP_INFO: Record<GroupType, { label: string; cap: number; rate: number; desc: string }> = {

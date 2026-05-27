@@ -197,7 +197,7 @@ export default function HomePage() {
                         {regions.map((r) => (
                           <button
                             key={r}
-                            onClick={() => router.push(`/half-price/${encodeURIComponent(r)}`)}
+                            onClick={() => navigate(r)}
                             className="px-3 py-1.5 rounded-xl text-sm font-semibold
                               bg-white border border-emerald-300 text-emerald-800
                               hover:bg-emerald-600 hover:text-white hover:border-emerald-600

@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AREA_CODES } from '@/lib/api/tourApi';
 import { HALF_PRICE_ELIGIBLE } from '@/lib/data/benefits';
+import type { HalfPriceItem } from '@/lib/data/benefits';
 
 export const runtime = 'nodejs';
 export const revalidate = 3600;
 
-const TOUR_BASE = 'https://apis.data.go.kr/B551011/KorService2';
+export type { HalfPriceItem };
 
-export interface HalfPriceItem {
-  id: string;
-  name: string;
-  address: string;
-  imageUrl: string;
-  tel: string;
-  lat: number;
-  lng: number;
-  contentTypeId: string;
-}
+const TOUR_BASE = 'https://apis.data.go.kr/B551011/KorService2';
 
 async function fetchByType(
   areaCode: string,
@@ -71,9 +63,9 @@ export async function GET(req: NextRequest) {
   if (!areaInfo) return NextResponse.json({ error: 'unknown region' }, { status: 404 });
 
   const [attractions, restaurants, lodging] = await Promise.all([
-    fetchByType(areaInfo.areaCode, areaInfo.sigunguCode, '12', 12), // 관광지
-    fetchByType(areaInfo.areaCode, areaInfo.sigunguCode, '38', 12), // 음식점
-    fetchByType(areaInfo.areaCode, areaInfo.sigunguCode, '32', 8),  // 숙박
+    fetchByType(areaInfo.areaCode, areaInfo.sigunguCode, '12', 12),
+    fetchByType(areaInfo.areaCode, areaInfo.sigunguCode, '38', 12),
+    fetchByType(areaInfo.areaCode, areaInfo.sigunguCode, '32', 8),
   ]);
 
   return NextResponse.json({ region, attractions, restaurants, lodging });
