@@ -16,17 +16,33 @@ function buildGoogleMapsUrl(spots: TravelSpot[]): string {
   return `https://www.google.com/maps/dir/${parts.join('/')}`;
 }
 
+// 네이버 지도 웹 /p/directions/ URL은 내부 Place ID 없는 커스텀 좌표를 지원하지 않음.
+// 커스텀 좌표(WGS84) + 다중 경유지를 지원하는 공식 방법은 nmap:// 앱 스킴.
+// 모바일에서 네이버 지도 앱으로 열림 (v1~v5 최대 5개 경유지)
 function buildNaverMapsUrl(spots: TravelSpot[]): string {
   const valid = spots.filter((s) => s.coordinates.lat && s.coordinates.lng);
   if (valid.length < 2) return 'https://map.naver.com';
+
   const first = valid[0];
   const last = valid[valid.length - 1];
-  const slng = first.coordinates.lng;
-  const slat = first.coordinates.lat;
-  const elng = last.coordinates.lng;
-  const elat = last.coordinates.lat;
-  return `https://map.naver.com/v5/directions/${slng},${slat},${encodeURIComponent(first.name)},,/` +
-    `${elng},${elat},${encodeURIComponent(last.name)},,/-/-/transit`;
+  const vias = valid.slice(1, -1).slice(0, 5);
+
+  const params: Record<string, string> = {
+    slat: String(first.coordinates.lat),
+    slng: String(first.coordinates.lng),
+    sname: first.name,
+    dlat: String(last.coordinates.lat),
+    dlng: String(last.coordinates.lng),
+    dname: last.name,
+    appname: 'kr.co.travelplanner',
+  };
+  vias.forEach((spot, i) => {
+    params[`v${i + 1}lat`] = String(spot.coordinates.lat);
+    params[`v${i + 1}lng`] = String(spot.coordinates.lng);
+    params[`v${i + 1}name`] = spot.name;
+  });
+
+  return `nmap://route/car?${new URLSearchParams(params).toString()}`;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -34,6 +50,7 @@ export default function RouteMap({ spots, region: _region }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<ReturnType<typeof import('leaflet')['map']> | null>(null);
   const [routeStatus, setRouteStatus] = useState<'loading' | 'ok' | 'fallback' | 'nocoords'>('loading');
+  const [naverTooltip, setNaverTooltip] = useState(false);
 
   const validSpots = spots.filter((s) => s.coordinates.lat !== 0 || s.coordinates.lng !== 0);
 
@@ -44,6 +61,7 @@ export default function RouteMap({ spots, region: _region }: Props) {
     }
 
     let destroyed = false;
+    let ro: ResizeObserver | null = null;
 
     (async () => {
       const L = (await import('leaflet')).default;
@@ -67,8 +85,12 @@ export default function RouteMap({ spots, region: _region }: Props) {
       const map = L.map(containerRef.current, { zoomControl: true }).setView(center, 12);
       mapRef.current = map;
 
-      // 동적 임포트 후 컨테이너 크기가 확정되지 않은 경우 타일이 어긋나는 문제 방지
-      setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 0);
+      // 두 프레임 뒤에 invalidateSize — 동적 임포트 + React 렌더 사이클 완료를 기다림
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (!destroyed) map.invalidateSize(); }));
+
+      // 이후 컨테이너 크기 변화에도 타일 재정렬
+      ro = new ResizeObserver(() => { if (!destroyed) map.invalidateSize(); });
+      ro.observe(containerRef.current);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -131,6 +153,7 @@ export default function RouteMap({ spots, region: _region }: Props) {
 
     return () => {
       destroyed = true;
+      ro?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -150,12 +173,14 @@ export default function RouteMap({ spots, region: _region }: Props) {
   const naverUrl = buildNaverMapsUrl(validSpots);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-      {/* 지도 영역 — 인라인 height 필수: Leaflet이 CSS 클래스보다 먼저 크기를 읽으면 0으로 계산됨 */}
-      <div ref={containerRef} className="w-full" style={{ height: '320px' }} />
+    <div className="rounded-xl border border-slate-200 shadow-sm">
+      {/* 지도 영역 — overflow-hidden을 지도에만 적용해 하단 툴팁이 잘리지 않게 함 */}
+      <div className="overflow-hidden rounded-t-xl">
+        <div ref={containerRef} className="w-full" style={{ height: '320px' }} />
+      </div>
 
-      {/* 하단 컨트롤 */}
-      <div className="bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+      {/* 하단 컨트롤 — overflow 허용으로 툴팁이 아래로 표시됨 */}
+      <div className="bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-3 flex-wrap rounded-b-xl overflow-visible">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           {routeStatus === 'loading' && (
             <span className="flex items-center gap-1.5">
@@ -180,16 +205,29 @@ export default function RouteMap({ spots, region: _region }: Props) {
         </div>
 
         <div className="flex gap-2 shrink-0">
-          <a
-            href={naverUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-              bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-          >
-            <Navigation size={12} /> 네이버 길안내
-            <ExternalLink size={10} />
-          </a>
+          <div className="relative">
+            <button
+              onClick={() => {
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                if (isMobile) {
+                  window.location.href = naverUrl;
+                } else {
+                  setNaverTooltip(true);
+                  setTimeout(() => setNaverTooltip(false), 3000);
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+            >
+              <Navigation size={12} /> 네이버 앱 길안내
+            </button>
+            {naverTooltip && (
+              <div className="absolute top-full mt-2 right-0 w-52 bg-slate-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50 leading-relaxed">
+                <div className="absolute bottom-full right-4 border-4 border-transparent border-b-slate-800" />
+                모바일 기기에서 네이버 지도 앱으로 이용 가능합니다
+              </div>
+            )}
+          </div>
           <a
             href={googleUrl}
             target="_blank"
