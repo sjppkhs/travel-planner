@@ -35,15 +35,7 @@ import type { HalfPriceItem } from '@/lib/data/benefits';
 
 const CATEGORY_KEYS = ['attraction', 'food', 'nature', 'culture', 'shopping', 'activity'] as const;
 
-const CATEGORY_COLOR: Record<string, string> = {
-  attraction: 'bg-orange-100 text-orange-700 border-orange-300',
-  food: 'bg-rose-100 text-rose-700 border-rose-300',
-  nature: 'bg-green-100 text-green-700 border-green-300',
-  culture: 'bg-purple-100 text-purple-700 border-purple-300',
-  shopping: 'bg-pink-100 text-pink-700 border-pink-300',
-  activity: 'bg-cyan-100 text-cyan-700 border-cyan-300',
-};
-
+// 카테고리 필터 탭 아이콘 (카드 뱃지와 별개)
 const CATEGORY_ICON: Record<string, React.ReactNode> = {
   attraction: <Landmark size={11} />,
   food: <Utensils size={11} />,
@@ -238,20 +230,17 @@ function PlaceCard({
   order,
   onToggle,
   isEventVenue = false,
+  isHalfPrice = false,
 }: {
   spot: TravelSpot;
   selected: boolean;
   order: number;
   onToggle: () => void;
   isEventVenue?: boolean;
+  isHalfPrice?: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
   const { t } = useLang();
-
-  const catLabel: Record<string, string> = {
-    attraction: t.catAttraction, food: t.catFood, nature: t.catNature,
-    culture: t.catCulture, shopping: t.catShopping, activity: t.catActivity,
-  };
 
   return (
     <button
@@ -286,22 +275,26 @@ function PlaceCard({
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-        {/* 행사장 배지 or Category badge with icon */}
+        {/* 배지: 행사장 > 반값 라벨 > 없음 */}
         {isEventVenue ? (
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold border
             bg-violet-500 text-white border-violet-400 flex items-center gap-1">
             <Sparkles size={11} />
             {t.eventVenueLabel}
           </span>
-        ) : (
-          <span
-            className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold border
-              flex items-center gap-1 ${CATEGORY_COLOR[spot.category]}`}
-          >
-            {CATEGORY_ICON[spot.category]}
-            {catLabel[spot.category]}
+        ) : isHalfPrice && spot.category === 'attraction' ? (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold
+            bg-emerald-500 text-white flex items-center gap-1">
+            <BadgePercent size={11} />
+            반값 지정관광지
           </span>
-        )}
+        ) : isHalfPrice && spot.category === 'food' ? (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold
+            bg-emerald-500 text-white flex items-center gap-1">
+            <BadgePercent size={11} />
+            지원금 사용 가능
+          </span>
+        ) : null}
 
         {/* Selection indicator */}
         <div
@@ -606,6 +599,7 @@ function PlacesContent() {
               order={orderOf(spot.id)}
               onToggle={() => toggle(spot.id)}
               isEventVenue={spot.id === 'event-venue'}
+              isHalfPrice={isHalfPrice && lang === 'ko'}
             />
           ))}
         </div>
